@@ -68,6 +68,8 @@ public class BltSocketAcivity extends AppCompatActivity implements View.OnClickL
                     content_ly.addView(getLeftTextView(msg.obj.toString()));
                     break;
                 case 2://文件消息
+                    if (TextUtils.isEmpty(msg.obj.toString())) return;
+                    content_ly.addView(getLeftTextView(msg.obj.toString()));
                     break;
                 case 3://
                     break;

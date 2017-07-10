@@ -195,6 +195,9 @@ public class BltManager {
         return a;
     }
 
+    /**
+     * 获得系统保存的配对成功过的设备，并尝试连接
+     */
     private void getBltList() {
         if (getmBluetoothAdapter() == null) return;
         //获得已配对的远程蓝牙设备的集合
@@ -209,22 +212,27 @@ public class BltManager {
     }
 
     /**
-     * 尝试连接一个设备
+     * 尝试连接一个设备，子线程中完成，因为会线程阻塞
      *
-     * @param btDev
+     * @param btDev 蓝牙设备对象
+     * @param handler 结果回调事件
      * @return
      */
     private void connect(BluetoothDevice btDev, Handler handler) {
         try {
+            //通过和服务器协商的uuid来进行连接
             mBluetoothSocket = btDev.createRfcommSocketToServiceRecord(BltContant.SPP_UUID);
             if (mBluetoothSocket != null)
+                //全局只有一个bluetooth，所以我们可以将这个socket对象保存在appliaction中
                 BltAppliaction.bluetoothSocket = mBluetoothSocket;
-            //通过反射得到bltSocket对象
+            //通过反射得到bltSocket对象，与uuid进行连接得到的结果一样，但这里不提倡用反射的方法
             //mBluetoothSocket = (BluetoothSocket) btDev.getClass().getMethod("createRfcommSocket", new Class[]{int.class}).invoke(btDev, 1);
             Log.d("blueTooth", "开始连接...");
             //在建立之前调用
             if (getmBluetoothAdapter().isDiscovering())
+                //停止搜索
                 getmBluetoothAdapter().cancelDiscovery();
+            //如果当前socket处于非连接状态则调用连接
             if (!getmBluetoothSocket().isConnected()) {
                 //你应当确保在调用connect()时设备没有执行搜索设备的操作。
                 // 如果搜索设备也在同时进行，那么将会显著地降低连接速率，并很大程度上会连接失败。
@@ -232,6 +240,7 @@ public class BltManager {
             }
             Log.d("blueTooth", "已经链接");
             if (handler == null) return;
+            //结果回调
             Message message = new Message();
             message.what = 4;
             message.obj = btDev;
@@ -248,7 +257,7 @@ public class BltManager {
     }
 
     /**
-     * api 19,尝试配对
+     * 尝试配对和连接
      *
      * @param btDev
      */
@@ -266,8 +275,8 @@ public class BltManager {
 
 
     /**
-     * api 19,自动配对
-     * 只需要输入地址即可
+     * 输入mac地址进行自动配对
+     * 前提是系统保存了该地址的对象
      *
      * @param address
      */

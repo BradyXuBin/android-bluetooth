@@ -58,29 +58,33 @@ public class BltService {
     }
 
     /**
-     * 旦连接被接受并获得BluetoothSocket后，
-     * 应用立即将该BluetoothSocket发送至独立的线程并关闭BluetoothSocket，跳出循环。
+     * 这个操作应该放在子线程中，因为存在线程阻塞的问题
      */
     public void run(Handler handler) {
+        //服务器端的bltsocket需要传入uuid和一个独立存在的字符串，以便验证，通常使用包名的形式
         while (true) {
             try {
                 //注意，当accept()返回BluetoothSocket时，socket已经连接了，因此不应该调用connect方法。
-                //manageConnectedSocket()是一个虚构的方法，用来初始化数据传输的线程，将在后文介绍数据传输的部分。
+                //这里会线程阻塞，直到有蓝牙设备链接进来才会往下走
                 socket = getBluetoothServerSocket().accept();
-
-                // If a connection was accepted
                 if (socket != null) {
                     BltAppliaction.bluetoothSocket = socket;
+                    //回调结果通知
                     Message message = new Message();
                     message.what = 3;
                     message.obj = socket.getRemoteDevice();
                     handler.sendMessage(message);
-                    //应该开一个子线程
-                    //manageConnectedSocket(socket);
+                    //如果你的蓝牙设备只是一对一的连接，则执行以下代码
                     getBluetoothServerSocket().close();
-                    break;
+                    //如果你的蓝牙设备是一对多的，则应该调用break；跳出循环
+                    //break;
                 }
             } catch (IOException e) {
+                try {
+                    getBluetoothServerSocket().close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
                 break;
             }
         }
